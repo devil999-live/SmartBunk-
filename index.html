@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Safe Bunk | Cyberpunk Attendance</title>
+  
+  <!-- Fonts: Orbitron for futuristic numbers, Inter for readable text -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Export Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Tailwind Config & Cyberpunk Theme -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            cyber: ['Orbitron', 'sans-serif'],
+          },
+          colors: {
+            bgDark: '#050816',
+            glass: 'rgba(17, 25, 40, 0.75)',
+            neon: {
+              green: '#00ff88',
+              red: '#ff3355',
+              blue: '#00cfff',
+              purple: '#8b5cf6',
+              yellow: '#ffe600'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      background-color: #050816;
+      color: #e2e8f0;
+      overflow-x: hidden;
+      margin: 0;
+    }
+    
+    /* Animated Background Particles / Grid */
+    .cyber-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image: 
+        linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+      background-size: 30px 30px;
+      pointer-events: none;
+    }
+    .cyber-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.3;
+      z-index: -1;
+      animation: float 10s infinite alternate ease-in-out;
+    }
+    .orb-1 { width: 300px; height: 300px; background: #8b5cf6; top: -100px; left: -100px; }
+    .orb-2 { width: 400px; height: 400px; background: #00cfff; bottom: -100px; right: -100px; animation-delay: -5s; }
+    
+    @keyframes float {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(50px, 50px); }
+    }
+
+    /* Glassmorphism & Neon */
+    .glass-card {
+      background: rgba(17, 25, 40, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 1rem;
+    }
+    
+    .neon-border-green { box-shadow: 0 0 10px rgba(0, 255, 136, 0.2), inset 0 0 10px rgba(0, 255, 136, 0.1); border-color: rgba(0, 255, 136, 0.5); }
+    .neon-border-red { box-shadow: 0 0 10px rgba(255, 51, 85, 0.2), inset 0 0 10px rgba(255, 51, 85, 0.1); border-color: rgba(255, 51, 85, 0.5); }
+    .neon-border-blue { box-shadow: 0 0 10px rgba(0, 207, 255, 0.2), inset 0 0 10px rgba(0, 207, 255, 0.1); border-color: rgba(0, 207, 255, 0.5); }
+    
+    .neon-text-green { text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88; color: #00ff88; }
+    .neon-text-red { text-shadow: 0 0 10px #ff3355, 0 0 20px #ff3355; color: #ff3355; }
+    .neon-text-blue { text-shadow: 0 0 10px #00cfff, 0 0 20px #00cfff; color: #00cfff; }
+    .neon-text-purple { text-shadow: 0 0 10px #8b5cf6, 0 0 20px #8b5cf6; color: #8b5cf6; }
+
+    .btn-cyber { transition: all 0.3s ease; }
+    .btn-cyber:hover { transform: scale(1.05); }
+    .btn-cyber:active { transform: scale(0.97); }
+
+    .btn-present { box-shadow: 0 0 10px #00ff88, 0 0 20px rgba(0,255,136,0.5); border: 1px solid #00ff88; color: #00ff88; }
+    .btn-present:hover { background: rgba(0,255,136,0.1); box-shadow: 0 0 15px #00ff88, 0 0 30px #00ff88; }
+    
+    .btn-absent { box-shadow: 0 0 10px #ff3355, 0 0 20px rgba(255,51,85,0.5); border: 1px solid #ff3355; color: #ff3355; }
+    .btn-absent:hover { background: rgba(255,51,85,0.1); box-shadow: 0 0 15px #ff3355, 0 0 30px #ff3355; }
+    
+    .btn-holiday { box-shadow: 0 0 10px #00cfff, 0 0 20px rgba(0,207,255,0.5); border: 1px solid #00cfff; color: #00cfff; }
+    .btn-holiday:hover { background: rgba(0,207,255,0.1); box-shadow: 0 0 15px #00cfff, 0 0 30px #00cfff; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #050816; }
+    ::-webkit-scrollbar-thumb { background: #8b5cf6; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #00cfff; }
+
+    @media print {
+      body { background: white !important; color: black !important; }
+      .no-print { display: none !important; }
+      .cyber-bg, .cyber-orb { display: none !important; }
+      .glass-card { background: white !important; border: 1px solid #ccc !important; box-shadow: none !important; color: black !important;}
+      * { text-shadow: none !important; box-shadow: none !important; }
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "framer-motion": "https://esm.sh/framer-motion@10.16.4?deps=react@18.2.0,react-dom@18.2.0",
+        "recharts": "https://esm.sh/recharts@2.12.0?deps=react@18.2.0,react-dom@18.2.0",
+        "lucide-react": "https://esm.sh/lucide-react@0.294.0?deps=react@18.2.0",
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="cyber-bg"></div>
+  <div class="cyber-orb orb-1"></div>
+  <div class="cyber-orb orb-2"></div>
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useMemo } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { motion, AnimatePresence } from 'framer-motion';
+    import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+    import { 
+      CheckCircle, XCircle, Calendar as CalendarIcon, Shield, Zap, TrendingUp, 
+      Settings, Download, LogOut, ChevronRight, ChevronLeft, Trash2, Target, LayoutDashboard 
+    } from 'lucide-react';
+    
+    // Firebase Imports
+    import { initializeApp } from 'firebase/app';
+    import { 
+      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
+      signOut, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup 
+    } from 'firebase/auth';
+    import { 
+      getFirestore, doc, setDoc, onSnapshot, collection, writeBatch, getDocs
+    } from 'firebase/firestore';
+
+    // ==========================================
+    // 1. FIREBASE CONFIGURATION
+    // ==========================================
+    const userFirebaseConfig = {
+      apiKey: "AIzaSyCY_vrgdX4sB8CTr5IpLXGjJCyu09RmzR4",
+      authDomain: "smartbunk-999.firebaseapp.com",
+      projectId: "smartbunk-999",
+      storageBucket: "smartbunk-999.firebasestorage.app",
+      messagingSenderId: "1054512523346",
+      appId: "1:1054512523346:web:9abc0b0f7f5e78b7b5178b"
+    };
+    
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userFirebaseConfig;
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    const getDbPath = (userId, collectionName) => {
+      if (typeof __app_id !== 'undefined') {
+         return `artifacts/${__app_id}/users/${userId}/${collectionName}`;
+      }
+      return `users/${userId}/${collectionName}`;
+    };
+
+    // ==========================================
+    // 2. HELPER FUNCTIONS (TIMEZONE SAFE)
+    // ==========================================
+    // Convert any Date object to exact YYYY-MM-DD local time string
+    const toLocalYYYYMMDD = (dateObj) => {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+
+    const getToday = () => toLocalYYYYMMDD(new Date());
+
+    const isSunday = (dateStr) => {
+      // dateStr is 'YYYY-MM-DD'. Parse carefully to avoid timezone shift.
+      const [y, m, d] = dateStr.split('-');
+      return new Date(y, m - 1, d).getDay() === 0;
+    };
+
+    const getDatesBetween = (startDateStr, endDateStr) => {
+      let dates = [];
+      const [sy, sm, sd] = startDateStr.split('-');
+      let currentDate = new Date(sy, sm - 1, sd);
+      
+      const [ey, em, ed] = endDateStr.split('-');
+      const end = new Date(ey, em - 1, ed);
+      
+      while (currentDate <= end) {
+        dates.push(toLocalYYYYMMDD(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      return dates;
+    };
+
+    // Math Calculations
+    const calculateSafeBunks = (present, absent, required) => {
+      if (present === 0 && absent === 0) return 0;
+      let x = 0;
+      while (((present) / (present + absent + x)) * 100 >= required) {
+        x++;
+      }
+      return Math.max(0, x - 1);
+    };
+
+    const calculateRecoveryDays = (present, absent, required) => {
+      if (present === 0 && absent === 0) return 0;
+      let d = 0;
+      while (((present + d) / (present + absent + d)) * 100 < required) {
+        d++;
+      }
+      return d;
+    };
+
+    const calculatePercentage = (present, absent) => {
+      if (present + absent === 0) return 0;
+      return ((present / (present + absent)) * 100).toFixed(1);
+    };
+
+    // ==========================================
+    // 3. COMPONENTS
+    // ==========================================
+    const Modal = ({ isOpen, onClose, title, children }) => {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={onClose}>
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="glass-card border border-neon-purple p-6 max-w-sm w-full relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-cyber text-white mb-6 text-center">{title}</h3>
+            {children}
+          </motion.div>
+        </div>
+      );
+    };
+
+    const LoadingSpinner = () => (
+      <div className="flex h-screen items-center justify-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="w-12 h-12 border-4 border-neon-purple border-t-transparent rounded-full"
+        />
+      </div>
+    );
+
+    // --- MAIN APP ---
+    const App = () => {
+      const [user, setUser] = useState(null);
+      const [authLoading, setAuthLoading] = useState(true);
+      const [profile, setProfile] = useState(null);
+      const [attendance, setAttendance] = useState({});
+      const [currentTab, setCurrentTab] = useState('dashboard');
+      const [isFirstLogin, setIsFirstLogin] = useState(false);
+
+      useEffect(() => {
+        const initAuth = async () => {
+          try {
+             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await signInWithCustomToken(auth, __initial_auth_token);
+            }
+          } catch(e) {
+             console.log("Custom token failed, relying on manual auth.");
+          }
+        };
+        initAuth();
+
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+          setUser(currentUser);
+          setAuthLoading(false);
+        });
+        return () => unsubscribe();
+      }, []);
+
+      useEffect(() => {
+        if (!user) {
+          setProfile(null);
+          setAttendance({});
+          return;
+        }
+
+        let unsubProfile, unsubAttendance;
+
+        const loadData = async () => {
+          const profileDocRef = doc(db, getDbPath(user.uid, 'profile'), 'main');
+          
+          unsubProfile = onSnapshot(profileDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+              setProfile(docSnap.data());
+              setIsFirstLogin(false);
+            } else {
+              setIsFirstLogin(true);
+            }
+          });
+
+          const attendanceRef = collection(db, getDbPath(user.uid, 'attendance'));
+          unsubAttendance = onSnapshot(attendanceRef, (snapshot) => {
+            const data = {};
+            snapshot.forEach(d => { data[d.id] = d.data(); });
+            setAttendance(data);
+          });
+        };
+        loadData();
+
+        return () => {
+          if (unsubProfile) unsubProfile();
+          if (unsubAttendance) unsubAttendance();
+        };
+      }, [user]);
+
+      // Auto-Absent Logic
+      useEffect(() => {
+        if (profile?.createdAt && Object.keys(attendance).length > 0) {
+          runAutoLogic();
+        }
+      }, [profile?.createdAt]);
+
+      const runAutoLogic = async () => {
+        if (!user || !profile) return;
+        const startDate = profile.createdAt;
+        const today = getToday();
+        if (startDate === today) return; 
+
+        const datesToCheck = getDatesBetween(startDate, today);
+        datesToCheck.pop(); // Remove today
+
+        const batch = writeBatch(db);
+        let hasChanges = false;
+
+        datesToCheck.forEach(date => {
+          if (!attendance[date]) {
+            const dateRef = doc(db, getDbPath(user.uid, 'attendance'), date);
+            if (isSunday(date)) {
+              batch.set(dateRef, { date, status: 'holiday', isHoliday: true, updatedAt: new Date().toISOString(), auto: true });
+            } else {
+              batch.set(dateRef, { date, status: 'absent', isHoliday: false, updatedAt: new Date().toISOString(), auto: true });
+            }
+            hasChanges = true;
+          }
+        });
+
+        if (hasChanges) await batch.commit();
+      };
+
+      const setTargetPercentage = async (val) => {
+        if (!user) return;
+        await setDoc(doc(db, getDbPath(user.uid, 'profile'), 'main'), {
+          email: user.email,
+          requiredPercentage: val,
+          createdAt: getToday(),
+          updatedAt: new Date().toISOString()
+        });
+        setIsFirstLogin(false);
+      };
+
+      const handleMarkAttendance = async (dateStr, status) => {
+        if (!user) return;
+        const isHoliday = status === 'holiday';
+        const docRef = doc(db, getDbPath(user.uid, 'attendance'), dateStr);
+        await setDoc(docRef, {
+          date: dateStr,
+          status: status,
+          isHoliday: isHoliday,
+          updatedAt: new Date().toISOString(),
+          auto: false 
+        });
+      };
+
+      if (authLoading) return <LoadingSpinner />;
+      if (!user) return <LandingPage />;
+      if (isFirstLogin) return <SetupWizard onComplete={setTargetPercentage} />;
+
+      // Compute metrics
+      let present = 0, absent = 0, holiday = 0;
+      Object.values(attendance).forEach(record => {
+        if (record.status === 'present') present++;
+        else if (record.status === 'absent') absent++;
+        else if (record.status === 'holiday') holiday++;
+      });
+      
+      const reqPercent = profile?.requiredPercentage || 75;
+      const currentPercent = calculatePercentage(present, absent);
+      const safeBunks = calculateSafeBunks(present, absent, reqPercent);
+      const recDays = calculateRecoveryDays(present, absent, reqPercent);
+      const isSafe = parseFloat(currentPercent) >= reqPercent;
+
+      const NavItem = ({ id, icon: Icon, label }) => (
+        <button 
+          onClick={() => setCurrentTab(id)}
+          className={`flex flex-col items-center p-3 sm:flex-row sm:space-x-3 w-full rounded-xl transition-all ${
+            currentTab === id 
+              ? 'bg-neon-purple/20 border border-neon-purple text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-800/50 border border-transparent'
+          }`}
+        >
+          <Icon size={20} className={currentTab === id ? 'text-neon-purple drop-shadow-[0_0_8px_#8b5cf6]' : ''} />
+          <span className={`text-xs sm:text-sm font-medium ${currentTab === id ? 'hidden sm:block' : 'hidden sm:block'}`}>{label}</span>
+        </button>
+      );
+
+      return (
+        <div className="flex flex-col sm:flex-row h-screen no-print">
+          <nav className="sm:w-64 glass-card sm:rounded-none border-t sm:border-t-0 sm:border-r border-gray-800 p-2 sm:p-4 flex sm:flex-col justify-around sm:justify-start gap-2 order-2 sm:order-1 z-20">
+            <div className="hidden sm:flex items-center gap-3 p-4 mb-8">
+               <Shield className="text-neon-green" size={28} style={{ filter: 'drop-shadow(0 0 10px #00ff88)' }} />
+               <h1 className="text-xl font-cyber font-bold tracking-wider">SAFE BUNK</h1>
+            </div>
+            <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
+            <NavItem id="calendar" icon={CalendarIcon} label="Calendar" />
+            <NavItem id="calculator" icon={Zap} label="Calculator" />
+            <NavItem id="analytics" icon={TrendingUp} label="Analytics" />
+            <NavItem id="reports" icon={Download} label="Reports" />
+            <NavItem id="settings" icon={Settings} label="Settings" />
+          </nav>
+
+          <main className="flex-1 overflow-y-auto p-4 sm:p-8 order-1 sm:order-2 pb-24 sm:pb-8 relative">
+            <div className="max-w-5xl mx-auto space-y-8">
+              <AnimatePresence mode="wait">
+                {currentTab === 'dashboard' && (
+                  <DashboardView key="dash" {...{present, absent, holiday, currentPercent, reqPercent, safeBunks, recDays, isSafe, handleMarkAttendance, attendance}} />
+                )}
+                {currentTab === 'calendar' && (
+                  <MonthlyCalendarView key="cal" attendance={attendance} handleMarkAttendance={handleMarkAttendance} />
+                )}
+                {currentTab === 'calculator' && (
+                  <CalculatorView key="calc" present={present} absent={absent} reqPercent={reqPercent} />
+                )}
+                {currentTab === 'analytics' && (
+                  <AnalyticsView key="anal" attendance={attendance} present={present} absent={absent} holiday={holiday} />
+                )}
+                {currentTab === 'reports' && (
+                  <ReportsView key="rep" attendance={attendance} profile={profile} present={present} absent={absent} currentPercent={currentPercent} />
+                )}
+                {currentTab === 'settings' && (
+                  <SettingsView key="set" profile={profile} />
+                )}
+              </AnimatePresence>
+            </div>
+          </main>
+        </div>
+      );
+    };
+
+    // --- LANDING PAGE ---
+    const LandingPage = () => {
+      const [isLogin, setIsLogin] = useState(true);
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        try {
+          if (isLogin) await signInWithEmailAndPassword(auth, email, password);
+          else await createUserWithEmailAndPassword(auth, email, password);
+        } catch (err) { setError(err.message); }
+      };
+
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md glass-card p-8 border-neon-purple relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-neon-purple/20 blur-[50px] rounded-full"></div>
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-neon-blue/20 blur-[50px] rounded-full"></div>
+
+            <div className="text-center mb-8 relative z-10">
+              <Shield className="mx-auto text-neon-green mb-4 drop-shadow-[0_0_15px_#00ff88]" size={48} />
+              <h1 className="text-4xl font-cyber font-bold tracking-widest mb-2">SAFE BUNK</h1>
+              <p className="text-gray-400 text-sm italic">Know your attendance. Control your bunks.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+              <input type="email" placeholder="Email Array" required value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-neon-purple transition-all font-mono" />
+              <input type="password" placeholder="Passcode" required value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-neon-purple transition-all font-mono" />
+              
+              {error && <p className="text-neon-red text-xs">{error}</p>}
+
+              <button type="submit" className="w-full bg-neon-purple/20 border border-neon-purple text-neon-purple hover:bg-neon-purple/40 font-cyber font-bold rounded-lg p-3 transition-all hover:shadow-[0_0_15px_rgba(139,92,246,0.5)]">
+                {isLogin ? 'INITIALIZE SYSTEM' : 'CREATE PROTOCOL'}
+              </button>
+            </form>
+
+            <button onClick={() => signInWithPopup(auth, new GoogleAuthProvider())} className="mt-4 w-full bg-white/10 border border-gray-600 text-white hover:bg-white/20 font-cyber rounded-lg p-3 transition-all flex items-center justify-center gap-2 relative z-10">
+              Google Link
+            </button>
+
+            <p className="mt-6 text-center text-gray-400 text-sm relative z-10">
+              {isLogin ? "New user?" : "Already registered?"} 
+              <button onClick={() => setIsLogin(!isLogin)} className="ml-2 text-neon-blue hover:text-white underline decoration-neon-blue underline-offset-4">
+                {isLogin ? 'Establish Connection' : 'Return to Login'}
+              </button>
+            </p>
+          </motion.div>
+        </div>
+      );
+    };
+
+    // --- SETUP WIZARD ---
+    const SetupWizard = ({ onComplete }) => {
+      const [percent, setPercent] = useState(75);
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-md w-full glass-card border-neon-blue p-8 text-center">
+            <Target className="mx-auto text-neon-blue mb-4 drop-shadow-[0_0_15px_#00cfff]" size={48} />
+            <h2 className="text-2xl font-cyber font-bold mb-2">TARGET LOCK</h2>
+            <p className="text-gray-400 mb-8">Set your required attendance threshold to initialize safe bunk calculations.</p>
+            
+            <div className="flex justify-center items-end gap-2 mb-8">
+              <span className="text-5xl font-cyber font-bold text-neon-blue drop-shadow-[0_0_10px_#00cfff]">{percent}</span>
+              <span className="text-2xl text-gray-500 mb-1">%</span>
+            </div>
+            <input type="range" min="50" max="100" value={percent} onChange={(e) => setPercent(parseInt(e.target.value))} className="w-full mb-8 accent-neon-blue" />
+            <button onClick={() => onComplete(percent)} className="mt-8 w-full bg-neon-blue/20 border border-neon-blue text-neon-blue hover:bg-neon-blue/40 font-cyber font-bold rounded-lg p-3 transition-all">ENGAGE SYSTEM</button>
+          </motion.div>
+        </div>
+      );
+    };
+
+    // --- DASHBOARD VIEW ---
+    const DashboardView = ({ present, absent, holiday, currentPercent, reqPercent, safeBunks, recDays, isSafe, handleMarkAttendance, attendance }) => {
+      const today = getToday();
+      const todayStatus = attendance[today]?.status;
+
+      return (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+          <div className="glass-card p-6 border border-gray-800">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-cyber font-bold">DAILY PROTOCOL</h2>
+              <span className="text-sm text-gray-400">{today}</span>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <button onClick={() => handleMarkAttendance(today, 'present')} className={`btn-cyber flex flex-col items-center justify-center py-6 rounded-xl border ${todayStatus === 'present' ? 'bg-neon-green/20 border-neon-green' : 'btn-present'}`}>
+                <CheckCircle size={32} className="mb-2" />
+                <span className="font-cyber font-bold text-sm tracking-wider">PRESENT</span>
+              </button>
+              <button onClick={() => handleMarkAttendance(today, 'absent')} className={`btn-cyber flex flex-col items-center justify-center py-6 rounded-xl border ${todayStatus === 'absent' ? 'bg-neon-red/20 border-neon-red' : 'btn-absent'}`}>
+                <XCircle size={32} className="mb-2" />
+                <span className="font-cyber font-bold text-sm tracking-wider">ABSENT</span>
+              </button>
+              <button onClick={() => handleMarkAttendance(today, 'holiday')} className={`btn-cyber flex flex-col items-center justify-center py-6 rounded-xl border ${todayStatus === 'holiday' ? 'bg-neon-blue/20 border-neon-blue' : 'btn-holiday'}`}>
+                <CalendarIcon size={32} className="mb-2" />
+                <span className="font-cyber font-bold text-sm tracking-wider">HOLIDAY</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="glass-card p-6 border border-gray-800 flex flex-col items-center justify-center relative overflow-hidden">
+               <div className={`absolute inset-0 opacity-10 ${isSafe ? 'bg-neon-green' : 'bg-neon-red'}`}></div>
+               <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase tracking-wider relative z-10">System Status</h4>
+               <span className={`text-5xl font-cyber font-bold relative z-10 ${isSafe ? 'neon-text-green' : 'neon-text-red'}`}>{currentPercent}%</span>
+            </div>
+            <div className="glass-card p-6 border-l-4 border-[#00ff88]">
+              <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase">Total Present</h4>
+              <span className="text-4xl font-cyber font-bold neon-text-green">{present}</span>
+            </div>
+            <div className="glass-card p-6 border-l-4 border-[#ff3355]">
+              <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase">Total Absent</h4>
+              <span className="text-4xl font-cyber font-bold neon-text-red">{absent}</span>
+            </div>
+            <div className="glass-card p-6 border-l-4 border-[#00cfff]">
+              <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase">Holidays</h4>
+              <span className="text-4xl font-cyber font-bold neon-text-blue">{holiday}</span>
+            </div>
+          </div>
+
+          <div className={`glass-card p-8 border ${isSafe ? 'neon-border-green' : 'neon-border-red'} relative overflow-hidden`}>
+            <Shield className={`absolute -right-10 -bottom-10 w-64 h-64 opacity-5 ${isSafe ? 'text-neon-green' : 'text-neon-red'}`} />
+            <h2 className="text-2xl font-cyber font-bold mb-4 z-10 relative">BUNK INTELLIGENCE</h2>
+            {isSafe ? (
+              <div>
+                <p className="text-gray-300 text-lg z-10 relative">You can safely skip</p>
+                <div className="flex items-baseline gap-4 mt-2 z-10 relative">
+                  <span className="text-7xl font-cyber font-black neon-text-green">{safeBunks}</span>
+                  <span className="text-xl font-bold text-gray-400 uppercase tracking-widest">More Days</span>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-gray-300 text-lg z-10 relative">Warning. You need to attend</p>
+                <div className="flex items-baseline gap-4 mt-2 z-10 relative">
+                  <span className="text-7xl font-cyber font-black neon-text-red">{recDays}</span>
+                  <span className="text-xl font-bold text-gray-400 uppercase tracking-widest">Consecutive Days</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      );
+    };
+
+    // --- MONTHLY CALENDAR VIEW (NEW IMPLEMENTATION) ---
+    const MonthlyCalendarView = ({ attendance, handleMarkAttendance }) => {
+      const [viewDate, setViewDate] = useState(new Date());
+      const [selectedDate, setSelectedDate] = useState(null);
+
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth(); // 0-11
+      
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+      // Next / Prev Month Logic
+      const handlePrev = () => setViewDate(new Date(year, month - 1, 1));
+      const handleNext = () => setViewDate(new Date(year, month + 1, 1));
+
+      // Calculate days in month & starting day of week
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const firstDay = new Date(year, month, 1).getDay(); // 0 (Sun) - 6 (Sat)
+
+      // Get styles based on status
+      const getDayStyle = (dateStr) => {
+        const record = attendance[dateStr];
+        const isToday = dateStr === getToday();
+        
+        let style = "bg-gray-800/30 border-gray-700 hover:border-gray-500 text-gray-400"; // Default Empty
+        
+        if (record) {
+           if (record.status === 'present') style = "bg-neon-green/20 border-[#00ff88] text-[#00ff88] shadow-[0_0_10px_rgba(0,255,136,0.2)]";
+           if (record.status === 'absent') style = "bg-neon-red/20 border-[#ff3355] text-[#ff3355] shadow-[0_0_10px_rgba(255,51,85,0.2)]";
+           if (record.status === 'holiday') style = "bg-neon-blue/20 border-[#00cfff] text-[#00cfff] shadow-[0_0_10px_rgba(0,207,255,0.2)]";
+        }
+        
+        if (isToday) style += " ring-2 ring-[#ffe600] ring-offset-2 ring-offset-[#050816]";
+        
+        return style;
+      };
+
+      return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+          <div className="glass-card p-4 sm:p-6 border border-gray-800">
+            
+            {/* Header */}
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-xl sm:text-2xl font-cyber font-bold text-neon-blue drop-shadow-[0_0_10px_#00cfff] uppercase">
+                Temporal Matrix
+              </h2>
+              <div className="flex items-center gap-4 bg-gray-900/50 p-2 rounded-lg border border-gray-700">
+                 <button onClick={handlePrev} className="p-1 hover:text-neon-blue transition-colors"><ChevronLeft size={20} /></button>
+                 <span className="font-cyber font-bold text-white min-w-[120px] text-center">{monthNames[month]} {year}</span>
+                 <button onClick={handleNext} className="p-1 hover:text-neon-blue transition-colors"><ChevronRight size={20} /></button>
+              </div>
+            </div>
+
+            {/* Grid */}
+            <div className="grid grid-cols-7 gap-2 sm:gap-3">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center text-gray-500 font-cyber text-xs sm:text-sm py-2 tracking-widest">{day}</div>
+              ))}
+              
+              {/* Empty offset days */}
+              {Array(firstDay).fill(null).map((_, i) => <div key={`empty-${i}`} className="p-2 sm:p-4 rounded-lg bg-gray-900/20 opacity-50"></div>)}
+              
+              {/* Actual Days */}
+              {Array.from({ length: daysInMonth }, (_, i) => {
+                const day = i + 1;
+                const dateStr = toLocalYYYYMMDD(new Date(year, month, day));
+                const style = getDayStyle(dateStr);
+                
+                return (
+                  <button 
+                    key={day}
+                    onClick={() => setSelectedDate(dateStr)}
+                    className={`p-2 sm:p-4 rounded-lg border flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 ${style}`}
+                  >
+                    <span className="font-cyber font-bold text-sm sm:text-lg">{day}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap gap-4 mt-8 justify-center sm:justify-start text-xs font-mono">
+              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-gray-700 rounded-sm"></div> Empty</div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#00ff88] rounded-sm shadow-[0_0_8px_#00ff88]"></div> Present</div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#ff3355] rounded-sm shadow-[0_0_8px_#ff3355]"></div> Absent</div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#00cfff] rounded-sm shadow-[0_0_8px_#00cfff]"></div> Holiday</div>
+            </div>
+          </div>
+
+          <Modal isOpen={!!selectedDate} onClose={() => setSelectedDate(null)} title="OVERRIDE STATUS">
+            <p className="text-center text-neon-blue mb-6 font-cyber text-lg tracking-widest bg-gray-900 p-2 rounded border border-gray-800">{selectedDate}</p>
+            <div className="space-y-4">
+              <button onClick={() => { handleMarkAttendance(selectedDate, 'present'); setSelectedDate(null); }} className="w-full btn-cyber btn-present py-4 rounded-lg font-cyber font-bold tracking-widest bg-gray-900/50">
+                MARK PRESENT
+              </button>
+              <button onClick={() => { handleMarkAttendance(selectedDate, 'absent'); setSelectedDate(null); }} className="w-full btn-cyber btn-absent py-4 rounded-lg font-cyber font-bold tracking-widest bg-gray-900/50">
+                MARK ABSENT
+              </button>
+              <button onClick={() => { handleMarkAttendance(selectedDate, 'holiday'); setSelectedDate(null); }} className="w-full btn-cyber btn-holiday py-4 rounded-lg font-cyber font-bold tracking-widest bg-gray-900/50">
+                MARK HOLIDAY
+              </button>
+            </div>
+          </Modal>
+        </motion.div>
+      );
+    };
+
+    // --- CALCULATOR VIEW ---
+    const CalculatorView = ({ present, absent, reqPercent }) => {
+      const [missDays, setMissDays] = useState(0);
+
+      const renderSimulations = () => {
+        let rows = [];
+        for (let i = 1; i <= 10; i++) {
+          const newTotal = present + absent + i;
+          const newPercent = ((present / newTotal) * 100).toFixed(1);
+          const isDanger = parseFloat(newPercent) < reqPercent;
+          
+          rows.push(
+            <div key={i} className={`flex justify-between items-center p-3 rounded border ${isDanger ? 'bg-red-900/10 border-red-900/50' : 'bg-gray-800/30 border-gray-800'}`}>
+              <span className="text-gray-300">Miss {i} more {i===1?'day':'days'}</span>
+              <span className={`font-cyber font-bold ${isDanger ? 'text-neon-red' : 'text-neon-green'}`}>{newPercent}%</span>
+            </div>
+          );
+        }
+        return rows;
+      };
+
+      const simPercent = calculatePercentage(present, absent + missDays);
+      const simSafe = parseFloat(simPercent) >= reqPercent;
+
+      return (
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 max-w-3xl mx-auto">
+          <div className="glass-card p-6 neon-border-purple flex items-center gap-4">
+             <Zap size={32} className="neon-text-purple" />
+             <div>
+               <h2 className="text-2xl font-cyber font-bold">FUTURE SIMULATOR</h2>
+               <p className="text-gray-400">Project your attendance trajectory.</p>
+             </div>
+          </div>
+          <div className="glass-card p-8 border border-gray-800">
+             <div className="text-center mb-8">
+               <p className="text-gray-400 mb-2 uppercase tracking-wider">If I miss...</p>
+               <span className="text-5xl font-cyber font-bold neon-text-purple">{missDays} Days</span>
+             </div>
+             <input type="range" min="0" max="20" value={missDays} onChange={(e) => setMissDays(parseInt(e.target.value))} className="w-full mb-12 accent-neon-purple cursor-ew-resize" />
+             <div className="grid grid-cols-2 gap-4 text-center border-t border-gray-800 pt-8">
+                <div>
+                   <p className="text-gray-500 text-sm mb-1 uppercase">Projected Status</p>
+                   <span className={`text-3xl font-cyber font-bold ${simSafe ? 'neon-text-green' : 'neon-text-red'}`}>{simPercent}%</span>
+                </div>
+                <div>
+                   <p className="text-gray-500 text-sm mb-1 uppercase">Required Target</p>
+                   <span className="text-3xl font-cyber font-bold text-gray-300">{reqPercent}%</span>
+                </div>
+             </div>
+          </div>
+          <div className="glass-card p-6 border border-gray-800">
+             <h3 className="font-cyber font-bold mb-4 text-gray-300">Quick Projections</h3>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+               {renderSimulations()}
+             </div>
+          </div>
+        </motion.div>
+      );
+    };
+
+    // --- ANALYTICS VIEW ---
+    const AnalyticsView = ({ attendance, present, absent, holiday }) => {
+      const pieData = [
+        { name: 'Present', value: present, color: '#00ff88' },
+        { name: 'Absent', value: absent, color: '#ff3355' },
+        { name: 'Holiday', value: holiday, color: '#00cfff' }
+      ];
+
+      const monthlyData = {};
+      Object.values(attendance).forEach(record => {
+        const month = record.date.substring(0, 7); 
+        if (!monthlyData[month]) monthlyData[month] = { name: month, present: 0, absent: 0 };
+        if (record.status === 'present') monthlyData[month].present++;
+        if (record.status === 'absent') monthlyData[month].absent++;
+      });
+      const barData = Object.values(monthlyData).sort((a,b) => a.name.localeCompare(b.name)).slice(-6); 
+
+      return (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="glass-card p-6 border border-gray-800">
+              <h3 className="font-cyber text-gray-300 mb-6 uppercase">Distribution Matrix</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                      {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} style={{ filter: `drop-shadow(0 0 8px ${entry.color})` }} />)}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: 'rgba(5,8,22,0.9)', borderColor: '#8b5cf6', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontFamily: 'Orbitron' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-6 mt-4">
+                 {pieData.map(d => (
+                   <div key={d.name} className="flex items-center gap-2">
+                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color, boxShadow: `0 0 10px ${d.color}` }}></div>
+                     <span className="text-xs font-mono text-gray-400">{d.name}</span>
+                   </div>
+                 ))}
+              </div>
+            </div>
+            <div className="glass-card p-6 border border-gray-800">
+              <h3 className="font-cyber text-gray-300 mb-6 uppercase">Monthly Trends</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData}>
+                    <XAxis dataKey="name" stroke="#4b5563" tick={{fill: '#9ca3af', fontSize: 12}} />
+                    <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: 'rgba(5,8,22,0.9)', borderColor: '#00cfff', borderRadius: '8px' }} />
+                    <Bar dataKey="present" fill="#00ff88" radius={[4,4,0,0]} />
+                    <Bar dataKey="absent" fill="#ff3355" radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      );
+    };
+
+    // --- REPORTS VIEW ---
+    const ReportsView = ({ attendance, profile, present, absent, currentPercent }) => {
+      const handlePrintPDF = () => window.print();
+      const handleExportCSV = () => {
+        const header = "Date,Status,IsHoliday,AutoGenerated\n";
+        const rows = Object.values(attendance).sort((a,b) => b.date.localeCompare(a.date))
+          .map(r => `${r.date},${r.status},${r.isHoliday},${r.auto || false}`).join("\n");
+        const blob = new Blob([header + rows], { type: 'text/csv' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `SafeBunk_Export_${getToday()}.csv`; a.click();
+      };
+      const handleExportExcel = () => {
+        if (!window.XLSX) return alert("Excel library loading, please try again in a second.");
+        const ws = window.XLSX.utils.json_to_sheet(Object.values(attendance).sort((a,b) => b.date.localeCompare(a.date)));
+        const wb = window.XLSX.utils.book_new(); window.XLSX.utils.book_append_sheet(wb, ws, "Records");
+        window.XLSX.writeFile(wb, `SafeBunk_Log_${getToday()}.xlsx`);
+      };
+
+      return (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-2xl mx-auto">
+          <div className="hidden print:block text-black bg-white p-8 absolute top-0 left-0 w-full h-full">
+            <h1 className="text-4xl font-bold border-b-2 border-black pb-4 mb-8">Safe Bunk Official Report</h1>
+            <p><strong>Email:</strong> {profile?.email}</p>
+            <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
+            <div className="my-8 grid grid-cols-2 gap-4">
+               <div className="p-4 border border-black rounded"><strong>Total Present:</strong> {present}</div>
+               <div className="p-4 border border-black rounded"><strong>Total Absent:</strong> {absent}</div>
+               <div className="p-4 border border-black rounded"><strong>Target:</strong> {profile?.requiredPercentage}%</div>
+               <div className="p-4 border border-black rounded"><strong>Achievement:</strong> {currentPercent}%</div>
+            </div>
+          </div>
+          <div className="glass-card p-8 border border-neon-blue">
+            <h2 className="text-2xl font-cyber font-bold mb-2 neon-text-blue flex items-center gap-3"><Download /> DATA EXPORT CENTER</h2>
+            <div className="space-y-4 mt-8">
+              <button onClick={handlePrintPDF} className="w-full bg-white/5 border border-gray-700 hover:border-white p-4 rounded-xl flex justify-between group transition-all">
+                 <div className="text-left"><h4 className="font-cyber font-bold text-white group-hover:text-neon-blue">Print Report</h4></div><ChevronRight className="text-gray-500 group-hover:text-neon-blue" />
+              </button>
+              <button onClick={handleExportExcel} className="w-full bg-white/5 border border-gray-700 hover:border-[#00ff88] p-4 rounded-xl flex justify-between group transition-all">
+                 <div className="text-left"><h4 className="font-cyber font-bold text-white group-hover:text-neon-green">Export .XLSX</h4></div><ChevronRight className="text-gray-500 group-hover:text-neon-green" />
+              </button>
+              <button onClick={handleExportCSV} className="w-full bg-white/5 border border-gray-700 hover:border-[#ffe600] p-4 rounded-xl flex justify-between group transition-all">
+                 <div className="text-left"><h4 className="font-cyber font-bold text-white group-hover:text-[#ffe600]">Raw CSV Dump</h4></div><ChevronRight className="text-gray-500 group-hover:text-[#ffe600]" />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      );
+    };
+
+    // --- SETTINGS VIEW ---
+    const SettingsView = ({ profile }) => {
+      const handleDeleteData = async () => {
+         if(!confirm("Are you sure? This will wipe all records permanently.")) return;
+         try {
+           const snap = await getDocs(collection(db, getDbPath(auth.currentUser.uid, 'attendance')));
+           const batch = writeBatch(db);
+           snap.forEach(doc => batch.delete(doc.ref));
+           await batch.commit();
+         } catch(e) { alert("Error purging data."); }
+      };
+
+      return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto space-y-6">
+          <div className="glass-card p-6 border border-gray-800">
+            <h3 className="font-cyber text-xl font-bold mb-4 flex items-center gap-2"><Settings className="text-gray-400" /> SYSTEM CONFIG</h3>
+            <div className="space-y-6">
+              <div>
+                <label className="text-xs text-gray-500 uppercase block mb-2">Account</label>
+                <div className="bg-black/30 border border-gray-800 p-3 rounded text-sm font-mono">{profile?.email || 'Unknown'}</div>
+              </div>
+            </div>
+          </div>
+          <div className="glass-card p-6 border border-red-900/50 bg-red-900/5">
+            <h3 className="font-cyber text-xl font-bold text-neon-red mb-4 flex items-center gap-2"><Trash2 /> DANGER ZONE</h3>
+            <button onClick={handleDeleteData} className="w-full bg-red-950/40 border border-red-800 text-red-400 p-3 rounded font-bold">PURGE ATTENDANCE DATA</button>
+          </div>
+          <button onClick={() => signOut(auth)} className="w-full glass-card p-4 border border-gray-800 hover:border-gray-600 text-gray-400 flex justify-center gap-2"><LogOut size={18} /> TERMINATE SESSION</button>
+        </motion.div>
+      );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
+
+

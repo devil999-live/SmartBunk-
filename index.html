@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Safe Bunk | Cyberpunk Attendance</title>
+  <title>Smart Bunk | Cyberpunk Attendance</title>
   
   <!-- Fonts: Orbitron for futuristic numbers, Inter for readable text -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
@@ -500,8 +500,8 @@
 
             <div className="text-center mb-8 relative z-10">
               <Shield className="mx-auto text-neon-green mb-4 drop-shadow-[0_0_15px_#00ff88]" size={48} />
-              <h1 className="text-4xl font-cyber font-bold tracking-widest mb-2">SAFE BUNK</h1>
-              <p className="text-gray-400 text-sm italic">Know your attendance. Control your bunks.</p>
+              <h1 className="text-4xl font-cyber font-bold tracking-widest mb-2">𝐒𝐌𝐀𝐑𝐓 𝐁𝐔𝐍𝐊</h1>
+              <p className="text-gray-400 text-sm italic">𝐊𝐧𝐨𝐰 𝐲𝐨𝐮𝐫 𝐚𝐭𝐭𝐞𝐧𝐝𝐚𝐧𝐜𝐞. 𝐂𝐨𝐧𝐭𝐫𝐨𝐥 𝐲𝐨𝐮𝐫 𝐛𝐮𝐧𝐤𝐬</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
@@ -518,7 +518,7 @@
             </form>
 
             <button onClick={() => signInWithPopup(auth, new GoogleAuthProvider())} className="mt-4 w-full bg-white/10 border border-gray-600 text-white hover:bg-white/20 font-cyber rounded-lg p-3 transition-all flex items-center justify-center gap-2 relative z-10">
-              Google Link
+              𝐆𝐨𝐨𝐠𝐥𝐞 𝐋𝐢𝐧𝐤
             </button>
 
             <p className="mt-6 text-center text-gray-400 text-sm relative z-10">
@@ -562,22 +562,22 @@
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
           <div className="glass-card p-6 border border-gray-800">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-cyber font-bold">DAILY PROTOCOL</h2>
+              <h2 className="text-xl font-cyber font-bold">𝐃𝐀𝐈𝐋𝐘 𝐏𝐑𝐎𝐓𝐎𝐂𝐎𝐋</h2>
               <span className="text-sm text-gray-400">{today}</span>
             </div>
             
             <div className="grid grid-cols-3 gap-4">
               <button onClick={() => handleMarkAttendance(today, 'present')} className={`btn-cyber flex flex-col items-center justify-center py-6 rounded-xl border ${todayStatus === 'present' ? 'bg-neon-green/20 border-neon-green' : 'btn-present'}`}>
                 <CheckCircle size={32} className="mb-2" />
-                <span className="font-cyber font-bold text-sm tracking-wider">PRESENT</span>
+                <span className="font-cyber font-bold text-sm tracking-wider">𝐏𝐑𝐄𝐒𝐄𝐍𝐓</span>
               </button>
               <button onClick={() => handleMarkAttendance(today, 'absent')} className={`btn-cyber flex flex-col items-center justify-center py-6 rounded-xl border ${todayStatus === 'absent' ? 'bg-neon-red/20 border-neon-red' : 'btn-absent'}`}>
                 <XCircle size={32} className="mb-2" />
-                <span className="font-cyber font-bold text-sm tracking-wider">ABSENT</span>
+                <span className="font-cyber font-bold text-sm tracking-wider">𝐀𝐁𝐒𝐄𝐍𝐓</span>
               </button>
               <button onClick={() => handleMarkAttendance(today, 'holiday')} className={`btn-cyber flex flex-col items-center justify-center py-6 rounded-xl border ${todayStatus === 'holiday' ? 'bg-neon-blue/20 border-neon-blue' : 'btn-holiday'}`}>
                 <CalendarIcon size={32} className="mb-2" />
-                <span className="font-cyber font-bold text-sm tracking-wider">HOLIDAY</span>
+                <span className="font-cyber font-bold text-sm tracking-wider">𝐇𝐎𝐋𝐈𝐃𝐀𝐘</span>
               </button>
             </div>
           </div>
@@ -589,25 +589,26 @@
                <span className={`text-5xl font-cyber font-bold relative z-10 ${isSafe ? 'neon-text-green' : 'neon-text-red'}`}>{currentPercent}%</span>
             </div>
             <div className="glass-card p-6 border-l-4 border-[#00ff88]">
-              <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase">Total Present</h4>
+              <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase">𝐓𝐨𝐭𝐚𝐥 𝐏𝐫𝐞𝐬𝐞𝐧𝐭</h4>
               <span className="text-4xl font-cyber font-bold neon-text-green">{present}</span>
             </div>
             <div className="glass-card p-6 border-l-4 border-[#ff3355]">
-              <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase">Total Absent</h4>
+              <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase">𝐓𝐨𝐭𝐚𝐥 𝐀𝐛𝐬𝐞𝐧𝐭</h4>
               <span className="text-4xl font-cyber font-bold neon-text-red">{absent}</span>
             </div>
             <div className="glass-card p-6 border-l-4 border-[#00cfff]">
-              <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase">Holidays</h4>
+              <h4 className="text-gray-400 text-sm font-medium mb-2 uppercase">𝐇𝐨𝐥𝐢𝐝𝐚𝐲𝐬</h4>
               <span className="text-4xl font-cyber font-bold neon-text-blue">{holiday}</span>
             </div>
           </div>
 
           <div className={`glass-card p-8 border ${isSafe ? 'neon-border-green' : 'neon-border-red'} relative overflow-hidden`}>
             <Shield className={`absolute -right-10 -bottom-10 w-64 h-64 opacity-5 ${isSafe ? 'text-neon-green' : 'text-neon-red'}`} />
-            <h2 className="text-2xl font-cyber font-bold mb-4 z-10 relative">BUNK INTELLIGENCE</h2>
+            <h2 className="text-2xl font-cyber font-bold mb-4 z-10 relative">ＢＵＮＫ ＩＮＴＥＬＬＩＧＥＮＣＥ
+</h2>
             {isSafe ? (
               <div>
-                <p className="text-gray-300 text-lg z-10 relative">You can safely skip</p>
+                <p className="text-gray-300 text-lg z-10 relative">𝐘𝐨𝐮 𝐜𝐚𝐧 𝐬𝐚𝐟𝐞𝐥𝐲 𝐬𝐤𝐢𝐩</p>
                 <div className="flex items-baseline gap-4 mt-2 z-10 relative">
                   <span className="text-7xl font-cyber font-black neon-text-green">{safeBunks}</span>
                   <span className="text-xl font-bold text-gray-400 uppercase tracking-widest">More Days</span>
@@ -615,10 +616,11 @@
               </div>
             ) : (
               <div>
-                <p className="text-gray-300 text-lg z-10 relative">Warning. You need to attend</p>
+                <p className="text-gray-300 text-lg z-10 relative">𝐖𝐚𝐫𝐧𝐢𝐧𝐠. 𝐘𝐨𝐮 𝐧𝐞𝐞𝐝 𝐭𝐨 𝐚𝐭𝐭𝐞𝐧𝐝
+</p>
                 <div className="flex items-baseline gap-4 mt-2 z-10 relative">
                   <span className="text-7xl font-cyber font-black neon-text-red">{recDays}</span>
-                  <span className="text-xl font-bold text-gray-400 uppercase tracking-widest">Consecutive Days</span>
+                  <span className="text-xl font-bold text-gray-400 uppercase tracking-widest">𝐂𝐨𝐧𝐬𝐞𝐜𝐮𝐭𝐢𝐯𝐞 𝐃𝐚𝐲𝐬</span>
                 </div>
               </div>
             )}
@@ -670,7 +672,7 @@
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xl sm:text-2xl font-cyber font-bold text-neon-blue drop-shadow-[0_0_10px_#00cfff] uppercase">
-                Temporal Matrix
+                𝐓𝐞𝐦𝐩𝐨𝐫𝐚𝐥 𝐌𝐚𝐭𝐫𝐢𝐱
               </h2>
               <div className="flex items-center gap-4 bg-gray-900/50 p-2 rounded-lg border border-gray-700">
                  <button onClick={handlePrev} className="p-1 hover:text-neon-blue transition-colors"><ChevronLeft size={20} /></button>
@@ -719,13 +721,13 @@
             <p className="text-center text-neon-blue mb-6 font-cyber text-lg tracking-widest bg-gray-900 p-2 rounded border border-gray-800">{selectedDate}</p>
             <div className="space-y-4">
               <button onClick={() => { handleMarkAttendance(selectedDate, 'present'); setSelectedDate(null); }} className="w-full btn-cyber btn-present py-4 rounded-lg font-cyber font-bold tracking-widest bg-gray-900/50">
-                MARK PRESENT
+                𝐌𝐀𝐑𝐊 𝐏𝐑𝐄𝐒𝐄𝐍𝐓
               </button>
               <button onClick={() => { handleMarkAttendance(selectedDate, 'absent'); setSelectedDate(null); }} className="w-full btn-cyber btn-absent py-4 rounded-lg font-cyber font-bold tracking-widest bg-gray-900/50">
-                MARK ABSENT
+                𝐌𝐀𝐑𝐊 𝐀𝐁𝐒𝐄𝐍𝐓
               </button>
               <button onClick={() => { handleMarkAttendance(selectedDate, 'holiday'); setSelectedDate(null); }} className="w-full btn-cyber btn-holiday py-4 rounded-lg font-cyber font-bold tracking-widest bg-gray-900/50">
-                MARK HOLIDAY
+                𝐌𝐀𝐑𝐊 𝐇𝐎𝐋𝐈𝐃𝐀𝐘
               </button>
             </div>
           </Modal>
@@ -762,8 +764,8 @@
           <div className="glass-card p-6 neon-border-purple flex items-center gap-4">
              <Zap size={32} className="neon-text-purple" />
              <div>
-               <h2 className="text-2xl font-cyber font-bold">FUTURE SIMULATOR</h2>
-               <p className="text-gray-400">Project your attendance trajectory.</p>
+               <h2 className="text-2xl font-cyber font-bold">𝐅𝐔𝐓𝐔𝐑𝐄 𝐒𝐈𝐌𝐔𝐋𝐀𝐓𝐎𝐑</h2>
+               <p className="text-gray-400">ℙ𝕣𝕠𝕛𝕖𝕔𝕥 𝕐𝕠𝕦𝕣 𝔸𝕥𝕥𝕖𝕟𝕕𝕒𝕟𝕔𝕖 𝕋𝕣𝕒𝕛𝕖𝕔𝕥𝕠𝕣𝕪</p>
              </div>
           </div>
           <div className="glass-card p-8 border border-gray-800">
